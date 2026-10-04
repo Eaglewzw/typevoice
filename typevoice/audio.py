@@ -151,11 +151,15 @@ def save_audio_wav(samples: np.ndarray, entry_id: str) -> str | None:
     pcm = np.clip(np.asarray(samples, dtype=np.float32) * 32767.0, -32768, 32767).astype("<i2")
     filename = f"{entry_id}.wav"
     try:
-        with wave.open(os.path.join(AUDIO_DIR, filename), "wb") as w:
-            w.setnchannels(1)
-            w.setsampwidth(2)
-            w.setframerate(SAMPLE_RATE)
-            w.writeframes(pcm.tobytes())
+        path = os.path.join(AUDIO_DIR, filename)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            with wave.open(stream, "wb") as w:
+                w.setnchannels(1)
+                w.setsampwidth(2)
+                w.setframerate(SAMPLE_RATE)
+                w.writeframes(pcm.tobytes())
     except OSError:
         return None
     return filename

@@ -145,6 +145,9 @@ def cmd_status(_args) -> int:
 
 
 def cmd_history(args) -> int:
+    if args.window:
+        from .history_window import run_history
+        return run_history()
     from .history import History
     rows = History().recent(limit=args.limit)
     if not rows:
@@ -243,6 +246,7 @@ def main(argv=None) -> int:
     sub.add_parser("status", help="配置与数据文件位置")
     p = sub.add_parser("history", help="查看最近的历史记录")
     p.add_argument("--limit", type=int, default=20)
+    p.add_argument("--window", action="store_true", help="打开历史记录窗口")
     p = sub.add_parser("autostart", help="开机自启 on|off")
     p.add_argument("action", choices=["on", "off"])
 

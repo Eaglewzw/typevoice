@@ -37,6 +37,7 @@ typevoice
 ## 设置与数据
 
 常用选项在设置窗口调整；高级设置可编辑 `~/.config/typevoice/config.json`。
+在设置窗口或托盘菜单打开“历史记录”，可查看、复制识别原文与最终文本。开启“保存后续录音”后，新录音可在历史中播放；旧录音不会补存。也可运行 `typevoice history --window` 打开。
 API Key 可从 [火山引擎](https://console.volcengine.com/speech/app) 或
 [阿里百炼](https://bailian.console.aliyun.com/) 申请，选择与 Key 对应的识别服务。
 

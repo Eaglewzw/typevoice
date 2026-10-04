@@ -73,6 +73,7 @@ class App:
         self.capsule = None
         self._polish_failed = False
         self._settings = None
+        self._history_window = None
 
         self.cue = CueSounds(self.config)
         self.history = History(log=log.info)
@@ -127,6 +128,9 @@ class App:
 
     def quit(self, *_args):
         log.info("TypeVoice quitting")
+        if self._history_window is not None:
+            self._history_window.destroy()
+            self._history_window = None
         # 每步都兜住异常，保证 Gtk.main_quit() 一定执行——
         # 退不干净的代价是进程残留在后台、还占着全局快捷键
         if self._hotkey is not None:
@@ -174,9 +178,17 @@ class App:
     def show_settings(self):
         from .settings import SettingsWindow
         if self._settings is None:
-            self._settings = SettingsWindow(self.config, on_saved=self.reload_config, on_quit=self.quit)
+            self._settings = SettingsWindow(self.config, on_saved=self.reload_config,
+                                             on_quit=self.quit, on_history=self.show_history)
         self._settings.show_all()
         self._settings.present()
+
+    def show_history(self):
+        from .history_window import HistoryWindow
+        if self._history_window is None:
+            self._history_window = HistoryWindow(self.config, self.history)
+        self._history_window.show_all()
+        self._history_window.present()
 
     def reload_config(self):
         """托盘菜单：用户改完 config.json 后点这里，Key/模型等即刻生效（快捷键改动仍需重启）。"""

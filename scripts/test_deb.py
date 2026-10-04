@@ -75,6 +75,21 @@ def test(package):
                 app.terminate()
                 app.communicate(timeout=8)
 
+        browser = subprocess.Popen([str(launcher), 'history', '--window'], env=env,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            time.sleep(0.8)
+            assert browser.poll() is None, 'packaged history window exited at startup'
+            browser.terminate()
+            output = browser.communicate(timeout=8)[0]
+            assert browser.returncode == 0, output
+            assert 'Traceback' not in output and 'CRITICAL' not in output, output
+            print('PASS: packaged history window startup and graceful shutdown')
+        finally:
+            if browser.poll() is None:
+                browser.terminate()
+                browser.communicate(timeout=8)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)

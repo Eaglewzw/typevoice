@@ -16,9 +16,12 @@ CSS = b"""
 
 
 class SettingsWindow(Gtk.Window):
-    def __init__(self, config, on_saved=None, on_quit=None):
+    def __init__(self, config, on_saved=None, on_quit=None, on_history=None):
         super().__init__(title="TypeVoice")
         self.config, self.on_saved = config, on_saved
+        self.on_history = on_history
+        self._history_window = None
+        self.connect("destroy", self._close_history)
         self.set_name("typevoice-settings")
         self.set_default_size(470, 560)
         self.set_resizable(False)
@@ -40,6 +43,10 @@ class SettingsWindow(Gtk.Window):
         title_box.add(self._label("TypeVoice", "title"))
         title_box.add(self._label("随口说，自然成文。", "muted"))
         header.add(title_box)
+        history_button = Gtk.Button(label="历史记录")
+        history_button.set_valign(Gtk.Align.CENTER)
+        history_button.connect("clicked", self._open_history)
+        header.pack_end(history_button, False, False, 0)
         outer.add(header)
 
         guide = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
@@ -128,6 +135,22 @@ class SettingsWindow(Gtk.Window):
         ensure_template(self.config.path)
         subprocess.Popen(["xdg-open", self.config.path])
 
+    def _open_history(self, *_):
+        if self.on_history:
+            self.on_history()
+            return
+        from .history import History
+        from .history_window import HistoryWindow
+        if self._history_window is None:
+            self._history_window = HistoryWindow(self.config, History())
+        self._history_window.show_all()
+        self._history_window.present()
+
+    def _close_history(self, *_):
+        if self._history_window is not None:
+            self._history_window.destroy()
+            self._history_window = None
+
     def _hide(self, *_):
         self.hide()
         return True
@@ -139,4 +162,5 @@ def run_settings():
     window.connect("hide", lambda *_: Gtk.main_quit())
     window.show_all()
     Gtk.main()
+    window.destroy()
     return 0

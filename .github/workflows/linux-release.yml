@@ -54,6 +54,7 @@ jobs:
           /usr/bin/python3 tests/test_port.py
           /usr/bin/python3 -m unittest discover -s tests -p 'test_migration.py' -v
           xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -p 'test_regressions.py' -v
+          xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -p 'test_history_window.py' -v
           desktop-file-validate packaging/typevoice.desktop
 
       - name: Build and verify package
@@ -79,7 +80,7 @@ jobs:
           gh release upload "$RELEASE_TAG" \
             "dist/typevoice_${VERSION}-1_all.deb" \
             "dist/typevoice_${VERSION}-1_all.deb.sha256" \
-            dist/ui-preview.png --clobber
+            dist/ui-preview.png dist/history-preview.png --clobber
           gh release edit "$RELEASE_TAG" --draft=false --latest \
             --title "TypeVoice $VERSION · Linux" \
             --notes-file packaging/RELEASE_NOTES.md

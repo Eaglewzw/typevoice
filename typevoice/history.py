@@ -12,7 +12,7 @@ import stat
 import threading
 from datetime import datetime, timedelta
 
-from .config import AUDIO_DIR, HISTORY_DB_PATH, HISTORY_KEY_PATH
+from .config import HISTORY_DB_PATH, HISTORY_KEY_PATH
 
 CIPHER_PREFIX = "tfenc1:"
 PLAIN_PREFIX = "plain:"
@@ -24,6 +24,7 @@ class History:
     def __init__(self, db_path: str = HISTORY_DB_PATH, key_path: str = HISTORY_KEY_PATH, log=None):
         self.db_path = db_path
         self.key_path = key_path
+        self.audio_dir = os.path.join(os.path.dirname(os.path.abspath(db_path)), "audio")
         self.log = log or (lambda msg: None)
         self._lock = threading.Lock()
         self._fernet = self._load_or_create_key()
@@ -107,20 +108,28 @@ class History:
         with self._lock, self._connect() as conn:
             cursor = conn.execute(
                 "SELECT id, ts, asr_enc, output_enc, duration_ms, audio_file "
-                "FROM entries WHERE kind = 'polish' ORDER BY ts DESC LIMIT ?", (limit,))
+                "FROM entries WHERE kind = 'polish' ORDER BY ts DESC, rowid DESC LIMIT ?", (limit,))
             for row in cursor.fetchall():
                 rows.append({
                     "id": row[0], "ts": row[1],
                     "asr": self._open(row[2]), "output": self._open(row[3]),
                     "duration_ms": row[4],
-                    "audio_path": os.path.join(AUDIO_DIR, row[5]) if row[5] else None,
+                    "audio_path": self._audio_path(row[5]),
                 })
         return rows
 
     def audio_path(self, entry_id: str) -> str | None:
         with self._lock, self._connect() as conn:
             row = conn.execute("SELECT audio_file FROM entries WHERE id = ?", (entry_id,)).fetchone()
-        return os.path.join(AUDIO_DIR, row[0]) if row and row[0] else None
+        return self._audio_path(row[0]) if row else None
+
+    def _audio_path(self, filename):
+        if not filename or os.path.basename(filename) != filename:
+            return None
+        path = os.path.realpath(os.path.join(self.audio_dir, filename))
+        if os.path.commonpath((path, os.path.realpath(self.audio_dir))) != os.path.realpath(self.audio_dir):
+            return None
+        return path
 
     def prune(self, retention: str = "forever") -> int:
         """按保留策略删除过期记录；返回删除条数。retention=off 只清音频不留新记录由调用方控制。"""

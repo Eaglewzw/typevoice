@@ -37,6 +37,8 @@ are imported on first launch, with the original files kept as a backup.
 
 Use the settings window for common options, or edit `~/.config/typevoice/config.json` for advanced settings.
 
+Open History from settings or the tray to view and copy original transcripts and final text. Enable recording storage in that window to play back future recordings; past audio cannot be restored. You can also open it with `typevoice history --window`.
+
 - **Configuration**: `~/.config/typevoice/`
 - **History and recordings**: `~/.local/share/typevoice/`
 - **Logs**: `~/.cache/typevoice/`
