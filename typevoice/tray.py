@@ -10,8 +10,8 @@ import subprocess
 from .config import DATA_DIR
 
 
-def create_tray(config, app) -> object | None:
-    """创建托盘；失败返回 None。app 需要 pause()/resume()/quit() 与数据目录信息。"""
+def create_tray(app) -> object | None:
+    """创建托盘；失败返回 None。提供设置、历史、数据目录和退出入口。"""
     try:
         import gi
         try:
@@ -41,8 +41,7 @@ def create_tray(config, app) -> object | None:
         menu.append(item)
         return item
 
-    status_item = add_item(_status_line(app), None, sensitive=False)
-    add_item("暂停", lambda: _toggle_pause(app, config))
+    add_item("TypeVoice · 随时可以说话", None, sensitive=False)
     add_item("设置…", app.show_settings)
     add_item("历史记录…", app.show_history)
     add_item("打开数据目录（历史/音频）", lambda: subprocess.Popen(["xdg-open", DATA_DIR]))
@@ -52,21 +51,4 @@ def create_tray(config, app) -> object | None:
     menu.show_all()
     indicator.set_menu(menu)
 
-    def refresh_status():
-        status_item.set_label(_status_line(app))
-
-    indicator._refresh_status = refresh_status  # 供 app 更新菜单首行
     return indicator
-
-
-def _status_line(app) -> str:
-    if app.paused:
-        return "TypeVoice · 已暂停"
-    return "TypeVoice · 随时可以说话"
-
-
-def _toggle_pause(app, config):
-    if app.paused:
-        app.resume()
-    else:
-        app.pause()

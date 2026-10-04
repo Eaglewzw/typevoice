@@ -62,7 +62,6 @@ def acquire_single_instance() -> bool:
 class App:
     def __init__(self, config: Config | None = None):
         self.config = config or Config()
-        self.paused = False
         self._recording = False
         self._level = 0.0
         self._recorder: Recorder | None = None
@@ -168,12 +167,12 @@ class App:
     def _create_tray_safely(self):
         try:
             from . import tray as tray_mod
-            return tray_mod.create_tray(self.config, self)
+            return tray_mod.create_tray(self)
         except Exception as err:  # noqa: BLE001
             log.info(f"tray: 创建失败（{err}），跳过")
             return None
 
-    # ---- 暂停 ----
+    # ---- 设置与历史 ----
 
     def show_settings(self):
         from .settings import SettingsWindow
@@ -198,28 +197,9 @@ class App:
                  f"asr_version={self.asr.current_version()}")
         self._show_message("配置已重载", auto_hide_ms=1500)
 
-    def pause(self):
-        self.paused = True
-        log.info("paused")
-        self._refresh_tray()
-
-    def resume(self):
-        self.paused = False
-        log.info("resumed")
-        self._refresh_tray()
-
-    def _refresh_tray(self):
-        refresh = getattr(self._tray, "_refresh_status", None)
-        if refresh:
-            from .gtkenv import GLib
-            GLib.idle_add(refresh)
-
     # ---- 录音控制（hotkey 线程回调） ----
 
     def _on_record_start(self):
-        if self.paused:
-            log.info("hotkey ignored (paused)")
-            return
         if self._recording:
             return
         self.config.reload()
