@@ -30,6 +30,8 @@ then open settings, select that provider, and enter the key. Hold **Alt** to spe
 
 No API keys are included. Audio is sent to your chosen provider, which bills you for usage.
 
+Hold Alt alone for about 0.18 seconds, speak after the cue, and release to finish. Tap and release to keep recording, tap again to finish, or press Esc to cancel. Alt+S, Alt+Tab and other combinations keep their usual behavior.
+
 To upgrade, quit the old application and install the new package. Legacy configuration and history
 are imported on first launch, with the original files kept as a backup.
 

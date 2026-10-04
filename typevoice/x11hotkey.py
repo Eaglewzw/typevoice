@@ -1,39 +1,24 @@
-"""全局快捷键 — HotkeyManager 的移植（X11 XGrabKey 实现）。
+"""Observe X11 keys without grabbing Alt or stealing other apps' shortcuts.
 
-行为与 mac 版对齐（RecordingHotkeyBehavior）：
-- 按下立即开始录音；松手即停（长按说话）；
-- 按住不足 0.5 秒的「单击」判为点按开关：保持录音，再按一下才停；
-- 松手要等 0.08 秒确认（滤掉修饰键信号的瞬间抖动）；刚按下的头 1.5 秒里放宽到
-  0.35 秒（按键没压实时会出现「松开零点几秒又按回去」的假信号）；
-- 录音期间按 Esc 取消（丢弃本次录音）。
-
-注意：XGrabKey 抓的是「无修饰键按下快捷键本身」，不会影响 Alt+Tab 等组合。
+A short chord window precedes hold recording. A tap acts on release; any other
+key held before/during Alt suppresses that gesture. A late chord cancels the
+new hold recording, never submits it. Existing latched recording is preserved.
 """
 
+import select
 import threading
+import time
+from collections import deque
 
 from .config import Config
 
-# 与 mac 的 RecordingHotkeyBehavior 相同的手势参数
+CHORD_DELAY = 0.18
 HOLD_THRESHOLD = 0.50
 RELEASE_CONFIRM_DELAY = 0.08
 EARLY_PRESS_WINDOW = 1.5
 EARLY_RELEASE_CONFIRM_DELAY = 0.35
-
+REPEAT_RELEASE_DELAY = 0.01
 ESC_KEYSYM = 0xFF1B
-
-
-def lock_modifier_combos(X):
-    """XGrabKey 的经典坑：NumLock/CapsLock/ScrollLock 开着时，单独按键的
-    modifier mask 不是 0，只抓 modifiers=0 会收不到事件。把锁定修饰键的
-    8 种组合全部抓上（xbindkeys 等工具的标准做法）。普通组合键（如 Alt+Tab）
-    自带其他修饰键，不受影响。"""
-    return [
-        0,
-        X.Mod2Mask, X.LockMask, X.Mod2Mask | X.LockMask,
-        X.Mod5Mask, X.Mod2Mask | X.Mod5Mask, X.LockMask | X.Mod5Mask,
-        X.Mod2Mask | X.LockMask | X.Mod5Mask,
-    ]
 
 
 class HotkeyError(Exception):
@@ -41,12 +26,7 @@ class HotkeyError(Exception):
 
 
 class HotkeyManager(threading.Thread):
-    """语义回调（都在 hotkey 线程上调用，UI 侧自行调度）：
-      on_record_start()              按下（开始录音）
-      on_record_stop()               确认结束（松手确认 / 点按再按）
-      on_record_cancel()             Esc 取消
-      on_error(message)              无法抓键等致命错误
-    """
+    """All semantic callbacks and X11 operations run on this worker thread."""
 
     def __init__(self, config: Config, on_record_start, on_record_stop,
                  on_record_cancel, on_error=None, log=None):
@@ -57,206 +37,208 @@ class HotkeyManager(threading.Thread):
         self.on_record_cancel = on_record_cancel
         self.on_error = on_error or (lambda msg: None)
         self.log = log or (lambda msg: None)
-
-        self._disp = None
         self._stop_event = threading.Event()
-        self._lock = threading.Lock()
-        # 状态机：idle / recording / stop_pending / latched
+        self._reset_event = threading.Event()
+        self.ready = threading.Event()
         self._state = "idle"
-        self._press_time = 0.0
-        self._record_start = 0.0
-        self._stop_timer = None
-
-    # ---- 生命周期 ----
+        self._down = set()
+        self._gesture = None
+        self._blocked = False
+        self._deadline = None
+        self._events = deque()
+        self._release = None
 
     def run(self):
         try:
             self._run_loop()
         except Exception as err:  # noqa: BLE001
-            self.on_error(str(err))
+            if not self._stop_event.is_set():
+                self.on_error(str(err))
+        finally:
+            self._deadline = None
+            self.ready.clear()
 
     def _run_loop(self):
-        from Xlib import X, XK, error
+        from Xlib import X, XK
+        from Xlib.ext import record
         from .x11display import open_display
 
-        disp = open_display()
-        self._disp = disp
-        # hotkey_keysym 支持逗号分隔多个键：默认左右 Alt 都可按住说话
-        keyspec = self.config.string("hotkey_keysym") or "Alt_L,Alt_R"
-        names = [n.strip() for n in keyspec.split(",") if n.strip()] or ["Alt_L"]
-        keycodes = []
-        for name in names:
-            keysym = getattr(XK, f"XK_{name}", None) or XK.string_to_keysym(name)
-            kc = disp.keysym_to_keycode(keysym) if keysym else 0
-            if kc and kc not in keycodes:
-                keycodes.append(kc)
-            else:
-                self.log(f"Hotkey: 键名 {name!r} 在当前键盘布局下不可用，已跳过")
-        if not keycodes:
-            self.on_error(f"快捷键 {keyspec!r} 一个都解析不到，请在 config.json 里改 hotkey_keysym")
-            return
-        self._hotkey_codes = frozenset(keycodes)
-
-        def error_handler(err, request):
-            self.on_error("全局快捷键已被其他程序占用（如输入法/剪贴板工具），请换 hotkey_keysym")
-            self._stop_event.set()
-            return True
-
-        disp.set_error_handler(error_handler)
-        self.log(f"Hotkey: grabbing keycodes={keycodes} ({keyspec})")
-        # XGrabKey 的错误是异步回报的，sync 一下把 AlreadyGrabbed 之类暴露给 error_handler
-        for kc in keycodes:
-            for modifiers in lock_modifier_combos(X):
-                disp.screen().root.grab_key(kc, modifiers, True, X.GrabModeAsync, X.GrabModeAsync)
-        disp.sync()
-
-        self._event_loop(disp, keycodes)
+        control = open_display()
+        observer = None
+        context = None
         try:
-            disp.close()
-        except Exception:
-            pass
+            if not control.has_extension("RECORD"):
+                raise HotkeyError("X11 服务未启用 RECORD 扩展，无法监听录音快捷键")
+            keyspec = self.config.string("hotkey_keysym") or "Alt_L,Alt_R"
+            codes = set()
+            for name in keyspec.split(","):
+                name = name.strip()
+                sym = getattr(XK, f"XK_{name}", None) or XK.string_to_keysym(name)
+                code = control.keysym_to_keycode(sym) if sym else 0
+                if code:
+                    codes.add(code)
+            if not codes:
+                raise HotkeyError(f"快捷键 {keyspec!r} 无法解析，请修改 hotkey_keysym")
+            self._hotkey_codes = codes
+            self._esc_code = control.keysym_to_keycode(ESC_KEYSYM)
+            keymap = control.query_keymap()
+            self._down = {code for code in range(256)
+                          if keymap[code // 8] & (1 << (code % 8))}
+            context = control.record_create_context(0, [record.AllClients], [{
+                "core_requests": (0, 0), "core_replies": (0, 0),
+                "ext_requests": (0, 0, 0, 0), "ext_replies": (0, 0, 0, 0),
+                "delivered_events": (0, 0),
+                "device_events": (X.KeyPress, X.KeyRelease),
+                "errors": (0, 0), "client_started": False, "client_died": False,
+            }])
+            control.sync()
+            observer = open_display()
 
-    def _event_loop(self, disp, keycodes):
-        from Xlib import X, error
-        try:
+            def receive(reply):
+                if reply.category == record.StartOfData:
+                    self.ready.set()
+                elif reply.category == record.FromServer and not reply.client_swapped:
+                    # Only physical key events, not delivered copies or text. Keep
+                    # keycode/time in memory solely to recognize gestures/repeats.
+                    from Xlib.protocol import rq
+                    data = reply.data
+                    while data:
+                        event, data = rq.EventField(None).parse_binary_value(
+                            data, observer.display, None, None)
+                        if event.type in (X.KeyPress, X.KeyRelease):
+                            self._events.append((event.type == X.KeyPress,
+                                                 event.detail, event.time))
+
+            # Deferred reply lets this same thread service deadlines and shutdown;
+            # no timer thread shares an Xlib connection or starts audio after quit.
+            record.EnableContext(
+                display=observer.display,
+                opcode=observer.display.get_extension_major(record.extname),
+                context=context, callback=receive, defer=True)
+            observer.flush()
+            self.log(f"Hotkey: observing {keyspec} (Alt combinations pass through)")
             while not self._stop_event.is_set():
-                event = disp.next_event()
-                if self._stop_event.is_set():
-                    break
-                if event.type in (X.KeyPress, X.KeyRelease):
-                    self._handle_key(event.type == X.KeyPress, event.detail)
-        except error.ConnectionClosedError:
-            if not self._stop_event.is_set():
-                self.on_error("X11 连接断开")
+                observer.pending_events()  # dispatch RECORD replies without blocking
+                if self._reset_event.is_set():
+                    self._reset_event.clear()
+                    self._state = "idle"
+                    self._deadline = None
+                    self._blocked = True
+                while self._events and not self._stop_event.is_set():
+                    self._dispatch(*self._events.popleft())
+                now = time.monotonic()
+                if self._release and now >= self._release[3]:
+                    self._flush_release()
+                if self._deadline is not None and now >= self._deadline:
+                    self._deadline = None
+                    if self._state == "armed":
+                        self._start(now)
+                    elif self._state == "stop_pending":
+                        self._state = "idle"
+                        self.on_record_stop()
+                select.select([observer], [], [], 0.01)
         finally:
-            self._ungrab_escape()
-            try:
-                from Xlib import X
-                for kc in keycodes:
-                    for modifiers in lock_modifier_combos(X):
-                        disp.screen().root.ungrab_key(kc, modifiers)
-            except Exception:
-                pass
+            if context is not None:
+                control.record_disable_context(context)
+                control.sync()
+            if observer is not None:
+                observer.close()
+            if context is not None:
+                control.record_free_context(context)
+                control.sync()
+            control.close()
 
     def stop(self):
         self._stop_event.set()
-        # next_event() 是阻塞的：关连接让循环退出
-        disp = self._disp
-        if disp is not None:
-            try:
-                disp.close()
-            except Exception:
-                pass
-
-    # ---- Esc 抓取（仅录音期间） ----
-
-    def _grab_escape(self):
-        disp = self._disp
-        if disp is None:
-            return
-        from Xlib import X
-        esc = disp.keysym_to_keycode(ESC_KEYSYM)
-        if esc:
-            try:
-                for modifiers in lock_modifier_combos(X):
-                    disp.screen().root.grab_key(esc, modifiers, True,
-                                                X.GrabModeAsync, X.GrabModeAsync)
-                disp.sync()
-            except Exception:
-                pass
-
-    def _ungrab_escape(self):
-        disp = self._disp
-        if disp is None:
-            return
-        from Xlib import X
-        esc = disp.keysym_to_keycode(ESC_KEYSYM)
-        if esc:
-            try:
-                for modifiers in lock_modifier_combos(X):
-                    disp.screen().root.ungrab_key(esc, modifiers)
-                disp.sync()
-            except Exception:
-                pass
-
-    # ---- 按键状态机 ----
-
-    def _handle_key(self, is_press: bool, detail: int):
-        import time
-        now = time.monotonic()
-        esc_code = self._disp.keysym_to_keycode(ESC_KEYSYM) if self._disp else 0
-
-        if detail == esc_code and is_press:
-            with self._lock:
-                if self._state in ("recording", "stop_pending", "latched"):
-                    self.log("Hotkey: Esc pressed → cancel")
-                    self._cancel_timer()
-                    self._state = "idle"
-                    self._ungrab_escape()
-                    self.on_record_cancel()
-            return
-
-        if detail not in self._hotkey_codes:
-            return
-
-        with self._lock:
-            if is_press:
-                if self._state in ("recording", "stop_pending", "latched"):
-                    if self._state == "recording":
-                        return  # X 自动重复（按住不放会连发 KeyPress），忽略
-                    # stop_pending 里又按回去：当一直按着（早期抖动窗口）
-                    if self._state == "stop_pending":
-                        self._cancel_timer()
-                        self._state = "recording"
-                        self._press_time = now
-                        return
-                    # latched：再按一下 = 停
-                    self._state = "idle"
-                    self._ungrab_escape()
-                    self.on_record_stop()
-                    return
-                # idle：开始录音
-                self._state = "recording"
-                self._press_time = now
-                self._record_start = now
-                self._grab_escape()
-                self.on_record_start()
-                return
-
-            # KeyRelease
-            if self._state != "recording":
-                return
-            held = now - self._press_time
-            tap_toggle = self.config.bool_flag("hotkey_tap_toggle", default=True)
-            if tap_toggle and held < HOLD_THRESHOLD:
-                # 单击：保持录音（点按开关模式），再按一下才停
-                self.log(f"Hotkey: tap ({held:.2f}s) → latch")
-                self._state = "latched"
-                return
-            self._state = "stop_pending"
-            early = (now - self._record_start) < EARLY_PRESS_WINDOW
-            delay = EARLY_RELEASE_CONFIRM_DELAY if early else RELEASE_CONFIRM_DELAY
-            self._cancel_timer()
-            self._stop_timer = threading.Timer(delay, self._confirm_stop)
-            self._stop_timer.daemon = True
-            self._stop_timer.start()
-
-    def _confirm_stop(self):
-        with self._lock:
-            if self._state != "stop_pending":
-                return
-            self._state = "idle"
-            self._ungrab_escape()
-        self.on_record_stop()
-
-    def _cancel_timer(self):
-        if self._stop_timer is not None:
-            self._stop_timer.cancel()
-            self._stop_timer = None
 
     def force_idle(self):
-        """外部（如录音出错）强制回到 idle 态。"""
-        with self._lock:
-            self._cancel_timer()
+        self._reset_event.set()
+
+    def _dispatch(self, pressed, code, server_time):
+        if self._release:
+            if pressed and (code, server_time) == self._release[1:3]:
+                self._release = None  # X11 synthetic autorepeat release/press pair
+                return
+            self._flush_release()
+        if pressed:
+            self._handle_key(True, code)
+        else:
+            self._release = (False, code, server_time,
+                             time.monotonic() + REPEAT_RELEASE_DELAY)
+
+    def _flush_release(self):
+        _, code, _, _ = self._release
+        self._release = None
+        self._handle_key(False, code)
+
+    def _start(self, now):
+        self._state = "recording"
+        self._record_start = now
+        self.on_record_start()
+
+    def _handle_key(self, pressed, code):
+        now = time.monotonic()
+        if pressed:
+            if code in self._down:
+                return
+            others_down = bool(self._down)
+            self._down.add(code)
+            if code == self._esc_code and self._state != "idle":
+                active = self._state != "armed"
+                self._state = "idle"
+                self._deadline = None
+                self._blocked = True
+                if active:
+                    self.on_record_cancel()
+                return
+            if self._gesture is not None:
+                self._blocked = True
+                if self._state in ("armed", "recording"):
+                    active = self._state == "recording"
+                    self._state = "idle"
+                    self._deadline = None
+                    if active:
+                        self.on_record_cancel()
+                return
+            if code not in self._hotkey_codes:
+                return
+            self._gesture = code
+            self._blocked = others_down
+            self._press_time = now
+            if others_down:
+                return
+            if self._state == "idle":
+                self._state = "armed"
+                self._deadline = now + CHORD_DELAY
+            elif self._state == "stop_pending":
+                self._state = "recording"
+                self._deadline = None
+            # In latched state, wait for a clean release before stopping: Alt+S
+            # must not stop a recording that was already running.
+            return
+
+        self._down.discard(code)
+        if code != self._gesture:
+            return
+        self._gesture = None
+        if self._blocked:
+            return
+        self._deadline = None
+        if self._state == "latched":
             self._state = "idle"
-            self._ungrab_escape()
+            self.on_record_stop()
+        elif self._state in ("armed", "recording"):
+            tap = (now - self._press_time < HOLD_THRESHOLD and
+                   self.config.bool_flag("hotkey_tap_toggle", default=True))
+            if self._state == "armed":
+                if not tap:
+                    self._state = "idle"
+                    return
+                self._start(now)
+            if tap:
+                self._state = "latched"
+            else:
+                self._state = "stop_pending"
+                early = now - self._record_start < EARLY_PRESS_WINDOW
+                self._deadline = now + (EARLY_RELEASE_CONFIRM_DELAY if early
+                                        else RELEASE_CONFIRM_DELAY)

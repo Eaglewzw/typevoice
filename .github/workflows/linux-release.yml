@@ -55,6 +55,7 @@ jobs:
           /usr/bin/python3 -m unittest discover -s tests -p 'test_migration.py' -v
           xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -p 'test_regressions.py' -v
           xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -p 'test_history_window.py' -v
+          TYPEVOICE_HOTKEY_TEST=1 xvfb-run -a /usr/bin/python3 -m unittest discover -s tests -p 'test_hotkey.py' -v
           desktop-file-validate packaging/typevoice.desktop
 
       - name: Build and verify package

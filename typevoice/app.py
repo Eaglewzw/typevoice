@@ -2,7 +2,7 @@
 
 线程模型：
 - GTK 主线程：胶囊窗口、剪贴板、托盘；
-- hotkey 线程：XGrabKey 事件循环，产出语义回调；
+- hotkey 线程：X11 RECORD 监听与组合键判断，产出语义回调；
 - recorder 线程：arecord 采集；
 - pipeline 线程：识别 + 润色（串行，一次只有一条在跑）。
 
