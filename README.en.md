@@ -10,12 +10,8 @@ Actively developed and maintained by [Eaglewzw](https://github.com/Eaglewzw).
 
 ## Features
 
-- Global hold-to-talk or tap-to-toggle shortcut; Esc cancels recording.
-- Compact bottom overlay with microphone icon, live audio waveform and timer.
-- Cloud transcription, optional polishing, translation commands and terminology corrections.
-- Automatic paste, terminal shortcut support, and text clipboard restoration.
-- Settings, tray menu, optional autostart and encrypted local transcript history.
-- Obtain and enter your own API key from your provider. No API keys are included; audio is sent to your chosen provider and usage is billed by that provider.
+Record with a global shortcut, transcribe in the cloud, and automatically insert text into the focused application.
+Supports optional AI polishing, voice commands to choose the output language, and custom terminology corrections.
 
 ## Install and use
 
@@ -30,6 +26,8 @@ typevoice
 
 APT installs dependencies automatically. Obtain your own API key from your speech recognition provider,
 then open settings, select that provider, and enter the key. Hold **Alt** to speak.
+
+No API keys are included. Audio is sent to your chosen provider, which bills you for usage.
 
 To upgrade, quit the old application and install the new package. Legacy configuration and history
 are imported on first launch, with the original files kept as a backup.
