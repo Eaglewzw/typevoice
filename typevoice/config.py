@@ -31,7 +31,7 @@ LOCK_PATH = DATA_DIR + "/lock"
 
 # 各键的默认值；类型决定读取时的转换（bool/int/float/str/list）
 DEFAULTS = {
-    # 识别（火山引擎 / 阿里百炼）
+    # 识别（火山引擎 / 阿里百炼）；凭证默认留空，由用户自行申请并填写。
     "asr_version": "turbo",              # turbo / standard / v2 / bailian
     "bigasr_api_key": "",                # 火山新版单 API Key（优先）
     "bigasr_app_id": "",                 # 火山旧版 App ID（向后兼容）
@@ -95,7 +95,7 @@ def _coerce(raw, default):
 
 # 首次运行生成的模板：让托盘「打开设置」永远有东西可打开
 TEMPLATE = {
-    "_说明": "TypeVoice 配置。把 API Key 填进引号里，保存后下次录音生效；"
+    "_说明": "TypeVoice 不附带 API Key。请向服务商申请自己的 Key 并填入对应配置项，保存后下次录音生效；"
              "全部配置项见 README.md。此文件含密钥，权限已设为 0600，请勿外传。",
     "bigasr_api_key": "",
     "dashscope_api_key": "",

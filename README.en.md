@@ -15,6 +15,7 @@ Actively developed and maintained by [Eaglewzw](https://github.com/Eaglewzw).
 - Cloud transcription, optional polishing, translation commands and terminology corrections.
 - Automatic paste, terminal shortcut support, and text clipboard restoration.
 - Settings, tray menu, optional autostart and encrypted local transcript history.
+- Obtain and enter your own API key from your provider. No API keys are included; audio is sent to your chosen provider and usage is billed by that provider.
 
 ## Install and use
 
@@ -27,8 +28,8 @@ sudo apt install ./typevoice_0.2.0-1_all.deb
 typevoice
 ```
 
-APT installs dependencies automatically. Open settings, select your speech recognition provider,
-enter your own API key, and hold **Alt** to speak. Cloud usage is billed by your provider.
+APT installs dependencies automatically. Obtain your own API key from your speech recognition provider,
+then open settings, select that provider, and enter the key. Hold **Alt** to speak.
 
 To upgrade, quit the old application and install the new package. Legacy configuration and history
 are imported on first launch, with the original files kept as a backup.

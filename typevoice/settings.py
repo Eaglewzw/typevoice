@@ -74,7 +74,8 @@ class SettingsWindow(Gtk.Window):
             grid.attach(self._label(title), 0, row, 1, 1)
             widget.set_hexpand(True)
             grid.attach(widget, 1, row, 1, 1)
-        self.status = self._label("密钥仅保存在本机。语音发送至你选择的服务商。", "muted")
+        self.status = self._label("请向服务商申请并填写自己的 API Key，软件不附带密钥。"
+                                  "密钥保存在本机，语音发送至所选服务商，费用由服务商收取。", "muted")
         self.status.set_line_wrap(True)
         self.status.set_max_width_chars(48)
         outer.add(self.status)
@@ -105,7 +106,7 @@ class SettingsWindow(Gtk.Window):
         entry.set_visibility(False)
         entry.set_input_purpose(Gtk.InputPurpose.PASSWORD)
         entry.set_text(value or "")
-        entry.set_placeholder_text("填入 API Key")
+        entry.set_placeholder_text("填入你自行申请的 API Key")
         return entry
 
     def _save(self, *_):

@@ -3,6 +3,7 @@ TypeVoice 0.2.0 — Your voice. Your words.
 ### 本次更新
 
 - 更新 0.2.0 安装包的录音提示音：启动音改为 140 毫秒的轻柔短音；结束音使用相同音色，音量比启动音提高约 9.5 dB。
+- 明确 API Key 需由用户自行向服务商申请并填写；软件不附带个人或共享密钥，相关说明已同步到设置界面和配置模板。
 - 正式统一命名为 TypeVoice：应用、命令 `typevoice`、Python 模块、deb 包、桌面入口、图标与配置目录全部更新。
 - 工程仅保留 Linux 代码，移除原 macOS 程序、官网和宣传素材；GPL 许可证和上游署名保留在 LICENSE / NOTICE。
 - 保留深色录音胶囊、实时波形、设置窗口、托盘与语音输入功能。
@@ -21,7 +22,7 @@ typevoice
 APT 会安装缺少的依赖并替换旧包。不要只运行 `dpkg -i`；如果旧安装尚未配置完成，先运行 `sudo apt --fix-broken install`。
 
 需要 **Ubuntu 22.04 / X11**；Wayland 用户请在登录界面选择 **Ubuntu on Xorg**。
-其他发行版尚未实机验证。安装后可在应用菜单搜索 TypeVoice，需要自行配置云端 API Key。
+其他发行版尚未实机验证。安装后可在应用菜单搜索 TypeVoice，需要自行向服务商申请并配置自己的 API Key。
 
 下载校验文件后可运行：
 
