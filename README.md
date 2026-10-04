@@ -9,6 +9,8 @@
   <a href="LICENSE">GPL-3.0</a>
 </p>
 
+由 [Eaglewzw](https://github.com/Eaglewzw) 持续开发与维护。
+
 ## 功能
 
 - 全局快捷键录音：按住 Alt 说话，松开结束；轻按开始，再按结束；Esc 取消录音。
@@ -56,12 +58,6 @@ python3 scripts/build_deb.py     # 构建 deb，输出到 dist/
 ```
 
 测试位于 `tests/`，打包脚本位于 `scripts/`。推送版本标签后，GitHub Actions 自动测试并发布安装包。
-
-## 来源与许可
-
-TypeVoice 由 Eaglewzw 独立维护，基于 [kdsz001/typefree](https://github.com/kdsz001/typefree)
-的 GPL-3.0 代码移植与改进。上游版权归原权利人，原创贡献与修改归相应贡献者。
-本项目按 [GPL-3.0](LICENSE) 分发，详见 [NOTICE](NOTICE)，不是上游官方发行版。
 
 ## 反馈
 

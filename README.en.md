@@ -6,6 +6,8 @@ Voice typing for Linux: hold Alt to speak, release to transcribe and paste into 
 
 [Download](https://github.com/Eaglewzw/typevoice/releases/latest) · [中文](README.md) · [GPL-3.0](LICENSE)
 
+Actively developed and maintained by [Eaglewzw](https://github.com/Eaglewzw).
+
 ## Features
 
 - Global hold-to-talk or tap-to-toggle shortcut; Esc cancels recording.
@@ -52,9 +54,3 @@ python3 scripts/build_deb.py     # Build the deb in dist/
 ```
 
 Tests live in `tests/`, build scripts in `scripts/`. Version tags trigger automated testing and release publishing.
-
-## Attribution
-
-Independently maintained by Eaglewzw, derived from [kdsz001/typefree](https://github.com/kdsz001/typefree).
-Original contributors retain their copyrights. Distributed under [GPL-3.0](LICENSE); see [NOTICE](NOTICE).
-This is not an official upstream distribution.
