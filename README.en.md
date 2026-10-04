@@ -10,8 +10,9 @@ Actively developed and maintained by [Eaglewzw](https://github.com/Eaglewzw).
 
 ## Features
 
-Record with a global shortcut, transcribe in the cloud, and automatically insert text into the focused application.
-Supports optional AI polishing, voice commands to choose the output language, and custom terminology corrections.
+- **Speech to text**: Record with a global shortcut and transcribe in the cloud.
+- **Text refinement**: Optional AI polishing, spoken output-language commands, and custom terminology corrections.
+- **Automatic input**: Insert the result directly into the focused application.
 
 ## Install and use
 
