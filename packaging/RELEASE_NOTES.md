@@ -2,6 +2,7 @@ TypeVoice 0.2.0 — Your voice. Your words.
 
 ### 本次更新
 
+- 更新 0.2.0 安装包的录音提示音：启动音改为 140 毫秒的轻柔短音；结束音使用相同音色，音量比启动音提高约 9.5 dB。
 - 正式统一命名为 TypeVoice：应用、命令 `typevoice`、Python 模块、deb 包、桌面入口、图标与配置目录全部更新。
 - 工程仅保留 Linux 代码，移除原 macOS 程序、官网和宣传素材；GPL 许可证和上游署名保留在 LICENSE / NOTICE。
 - 保留深色录音胶囊、实时波形、设置窗口、托盘与语音输入功能。
