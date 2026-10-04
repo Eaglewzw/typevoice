@@ -1,7 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect x="4" y="4" width="120" height="120" rx="34" fill="#18181e"/>
-  <rect x="5" y="5" width="118" height="118" rx="33" fill="none" stroke="#36363f" stroke-width="2"/>
-  <g stroke="#f5f5f7" stroke-width="9" stroke-linecap="round">
-    <path d="M34 57v14 M49 44v40 M64 31v66 M79 44v40 M94 57v14"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">TypeVoice</title>
+  <desc id="desc">A luminous silver-white waveform floating above a rounded dark glass tile.</desc>
+  <defs>
+    <linearGradient id="edge" x1="20" y1="4" x2="98" y2="124" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#777d88"/>
+      <stop offset="0.42" stop-color="#343944"/>
+      <stop offset="1" stop-color="#0b0d12"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="48" y1="6" x2="78" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#363b46"/>
+      <stop offset="0.50" stop-color="#1c2029"/>
+      <stop offset="1" stop-color="#0b0e14"/>
+    </linearGradient>
+    <radialGradient id="surface-light" cx="0.28" cy="0" r="0.95">
+      <stop stop-color="#f4f6ff" stop-opacity="0.18"/>
+      <stop offset="0.62" stop-color="#eef1ff" stop-opacity="0.025"/>
+      <stop offset="1" stop-color="#eef1ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rim" x1="38" y1="6" x2="88" y2="121" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f5f7ff" stop-opacity="0.44"/>
+      <stop offset="0.42" stop-color="#c2c9d9" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#a4afc5" stop-opacity="0.20"/>
+    </linearGradient>
+    <linearGradient id="silver" x1="48" y1="30" x2="78" y2="99" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#f5f7fd"/>
+      <stop offset="1" stop-color="#cbd3e2"/>
+    </linearGradient>
+    <filter id="lift" x="-35%" y="-25%" width="170%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6"/>
+      <feOffset dy="2.8"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.65"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="32" fill="url(#edge)"/>
+  <rect x="5.5" y="5.5" width="117" height="115.5" rx="30.5" fill="url(#glass)"/>
+  <rect x="5.5" y="5.5" width="117" height="115.5" rx="30.5" fill="url(#surface-light)"/>
+  <rect x="6" y="6" width="116" height="115" rx="30" fill="none" stroke="url(#rim)"/>
+  <g fill="none" stroke-linecap="round" stroke-width="8" filter="url(#lift)">
+    <path d="M36 58v12 M50 46v36 M64 32v64 M78 46v36 M92 58v12" transform="translate(0 1)" stroke="#7c879c"/>
+    <path d="M36 58v12 M50 46v36 M64 32v64 M78 46v36 M92 58v12" stroke="url(#silver)"/>
   </g>
 </svg>
