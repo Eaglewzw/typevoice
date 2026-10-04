@@ -1,0 +1,15 @@
+TypeVoice
+Copyright (c) 2026 Eaglewzw for original contributions and modifications.
+
+TypeVoice is an independently maintained Linux voice typing application.
+It derives from the GPL-3.0 code of Typefree by kdsz001 and its contributors:
+https://github.com/kdsz001/typefree
+The original copyright holders retain the rights to their contributions.
+
+The Linux port, GTK interface, packaging, and TypeVoice rebranding were
+developed and modified by Eaglewzw in October 2026. The repository no longer
+ships the upstream macOS application, website, or branding assets.
+
+TypeVoice is distributed under the GNU General Public License, version 3.
+The full license is in LICENSE; Debian packages include it as COPYING.
+TypeVoice is not an official Typefree distribution or an affiliated product.

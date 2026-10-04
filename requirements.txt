@@ -1,0 +1,3 @@
+python-xlib>=0.33
+numpy>=1.21
+cryptography>=3.4

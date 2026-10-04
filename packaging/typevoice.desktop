@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=TypeVoice
+Name[zh_CN]=TypeVoice
+GenericName=Voice typing
+GenericName[zh_CN]=语音输入
+Comment=Speak naturally, write anywhere
+Comment[zh_CN]=随口说，自然成文
+Exec=typevoice run
+Icon=typevoice
+Terminal=false
+Categories=Utility;Accessibility;
+Keywords=voice;dictation;speech;语音;输入;
+StartupNotify=false

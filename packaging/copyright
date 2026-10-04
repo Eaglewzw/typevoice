@@ -1,0 +1,24 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: TypeVoice
+Source: https://github.com/Eaglewzw/typevoice
+
+Files: *
+Copyright: Original Typefree contributors (https://github.com/kdsz001/typefree)
+           2026 Eaglewzw, Linux port and modifications
+License: GPL-3
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of version 3 of the GNU General Public License
+ as published by the Free Software Foundation.
+ .
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ GNU General Public License for more details.
+ .
+ The complete license is included in COPYING and, on Debian systems,
+ is also available at /usr/share/common-licenses/GPL-3.
+Comment:
+ Based on the GPL-3.0 code of kdsz001/typefree (macOS).
+ Linux interface and packaging modified in October 2026 by Eaglewzw.
+ This independently maintained distribution uses its own name and icons.
+ Upstream Typefree branding and website content are not included.
