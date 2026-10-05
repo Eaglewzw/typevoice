@@ -44,8 +44,8 @@ def create_tray(app) -> object | None:
     add_item("TypeVoice · 随时可以说话", None, sensitive=False)
     add_item("设置…", app.show_settings)
     add_item("历史记录…", app.show_history)
-    add_item("打开数据目录（历史/音频）", lambda: subprocess.Popen(["xdg-open", DATA_DIR]))
-    add_item("重载配置（改完 config.json 后点这里）", app.reload_config)
+    add_item("打开数据目录", lambda: subprocess.Popen(["xdg-open", DATA_DIR]))
+    add_item("重载配置", app.reload_config)
     add_item("退出", app.quit)
 
     menu.show_all()

@@ -229,8 +229,9 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command")
 
     run = sub.add_parser("run", help="运行完整 App（默认）")
-    run.add_argument("--background", action="store_true", help="隐藏设置窗口，在后台运行")
-    parser.set_defaults(background=False)
+    run.add_argument("--background", action="store_true", default=True,
+                     help="在后台运行（默认行为，保留此选项兼容旧启动项）")
+    parser.set_defaults(background=True)
 
     p = sub.add_parser("record-once", help="录一段并走完整流水线，打印结果")
     p.add_argument("--seconds", type=float, default=5.0)

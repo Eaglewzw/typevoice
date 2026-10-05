@@ -47,12 +47,14 @@ _log_lock_file = None  # 持有 flock 的文件对象必须常驻，否则 GC �
 def acquire_single_instance() -> bool:
     global _log_lock_file
     os.makedirs(os.path.dirname(LOCK_PATH), exist_ok=True)
-    f = open(LOCK_PATH, "w")
+    f = open(LOCK_PATH, "a+")
     try:
         fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError:
         f.close()
         return False
+    f.seek(0)
+    f.truncate()
     f.write(str(os.getpid()))
     f.flush()
     _log_lock_file = f  # 常驻引用：进程活着，锁就在
@@ -89,11 +91,11 @@ class App:
 
     # ---- 启动 / 退出 ----
 
-    def start(self, *, background=False):
+    def start(self, *, background=True):
         from .overlay import Capsule
         self.capsule = Capsule(self.config)
 
-        # 首次运行生成模板配置，保证托盘「打开设置」永远有文件可打开
+        # 首次运行只生成配置；设置窗口由用户从托盘主动打开。
         from .config import ensure_template
         if ensure_template(self.config.path):
             log.info(f"config: 已生成模板配置 {self.config.path}，填好 Key 后点托盘「重载配置」")
@@ -108,8 +110,6 @@ class App:
         self._hotkey.start()
 
         self._tray = self._create_tray_safely()
-        if not background or not self.asr.is_configured() or self._tray is None:
-            self.show_settings()
         if self._tray is None:
             log.info("tray: AppIndicator 不可用，跳过托盘（sudo apt install "
                      "gir1.2-ayatanaappindicator3-0.1 可启用）")
@@ -354,7 +354,7 @@ class App:
         self.history.add(entry_id, asr, output, duration_ms, audio_file)
 
 
-def run_app(*, background=False) -> int:
+def run_app(*, background=True) -> int:
     if os.environ.get("XDG_SESSION_TYPE") == "wayland" or not os.environ.get("DISPLAY"):
         print("TypeVoice目前需要 X11 会话；请在登录界面选择 Ubuntu on Xorg。", file=sys.stderr)
         if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
@@ -366,10 +366,7 @@ def run_app(*, background=False) -> int:
             dialog.destroy()
         return 1
     if not acquire_single_instance():
-        if background:
-            return 0
-        from .settings import run_settings
-        return run_settings()
+        return 0
     setup_logging()
     app = App()
     from .gtkenv import Gtk  # noqa: F401  导入失败即缺 GTK，尽早暴露

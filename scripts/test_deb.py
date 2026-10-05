@@ -15,6 +15,21 @@ import tempfile
 import time
 
 
+def assert_settings_hidden():
+    from Xlib import X, display
+    connection = display.Display()
+    try:
+        pending = [connection.screen().root]
+        while pending:
+            window = pending.pop()
+            assert not (window.get_wm_name() == 'TypeVoice' and
+                        window.get_attributes().map_state == X.IsViewable), \
+                'settings opened automatically'
+            pending.extend(window.query_tree().children)
+    finally:
+        connection.close()
+
+
 def test(package):
     package = package.resolve()
     digest = hashlib.sha256(package.read_bytes()).hexdigest()
@@ -61,15 +76,22 @@ def test(package):
         try:
             time.sleep(1.2)
             assert app.poll() is None, 'packaged app exited at startup'
+            assert_settings_hidden()  # also on first launch without an API key
+            lock = base / 'data/typevoice/lock'
+            original_pid = lock.read_text()
+            run()  # default launcher and repeated opening must remain silent
+            run('run')
             run('run', '--background')  # existing instance must stay alive
             assert app.poll() is None
+            assert lock.read_text() == original_pid, 'duplicate launch overwrote the active PID'
+            assert_settings_hidden()
             app.send_signal(signal.SIGTERM)
             output = app.communicate(timeout=8)[0]
             assert app.returncode == 0, output
             assert 'Traceback' not in output and 'CRITICAL' not in output, output
             assert 'TypeVoice started' in output and 'TypeVoice quitting' in output, output
             assert (base / 'config/typevoice/config.json').exists()
-            print('PASS: packaged GTK app startup, duplicate instance handling and graceful shutdown')
+            print('PASS: silent startup, silent duplicate launches, intact PID and graceful shutdown')
         finally:
             if app.poll() is None:
                 app.terminate()
