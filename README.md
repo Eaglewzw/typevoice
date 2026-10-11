@@ -24,7 +24,7 @@
 从 [Releases](https://github.com/Eaglewzw/typevoice/releases/latest) 下载 `.deb`，然后执行：
 
 ```bash
-sudo apt install ./typevoice_0.2.0-1_all.deb
+sudo apt install ./typevoice_0.2.1-1_all.deb
 typevoice
 ```
 

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag (for example typevoice-v0.2.0)
+        description: Existing release tag (for example typevoice-v0.2.1)
         required: true
         type: string
 
@@ -85,12 +85,3 @@ jobs:
           gh release edit "$RELEASE_TAG" --draft=false --latest \
             --title "TypeVoice $VERSION · Linux" \
             --notes-file packaging/RELEASE_NOTES.md
-
-      - name: Remove superseded branding release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          if gh release view suiyan-v0.1.0 > /dev/null 2>&1; then
-            gh release delete suiyan-v0.1.0 --yes --cleanup-tag
-          fi

@@ -21,7 +21,7 @@ Supports **Ubuntu 22.04 / X11**. For Wayland sessions, select **Ubuntu on Xorg**
 Download the deb from [Releases](https://github.com/Eaglewzw/typevoice/releases/latest), then run:
 
 ```bash
-sudo apt install ./typevoice_0.2.0-1_all.deb
+sudo apt install ./typevoice_0.2.1-1_all.deb
 typevoice
 ```
 

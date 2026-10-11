@@ -49,11 +49,11 @@ def build(output):
         (doc / 'README.md.gz').write_bytes(gzip.compress((PROJECT / 'README.md').read_bytes(), mtime=0))
         changelog = f'''typevoice ({version}) unstable; urgency=medium
 
-  * Add Linux dictation HUD, settings panel and Debian desktop integration.
-  * Rename application, package and modules to TypeVoice.
-  * Import legacy configuration and encrypted history without deleting originals.
+  * Review polished transcripts for coherence, grammar and natural phrasing.
+  * Restore missing sentence parts only when unambiguous from the source.
+  * Apply the same final review to translated output.
 
- -- Eaglewzw <1460853569@qq.com>  Sun, 04 Oct 2026 12:00:00 +0800
+ -- Eaglewzw <1460853569@qq.com>  Sun, 11 Oct 2026 12:00:00 +0800
 '''
         (doc / 'changelog.Debian.gz').write_bytes(gzip.compress(changelog.encode(), mtime=0))
         installed_size = sum(p.stat().st_size for p in root.rglob('*') if p.is_file())
